@@ -19,6 +19,13 @@
         }
       },
       "bluetooth": {
+        "title": "Choose Bluetooth device",
+        "description": "Select the BMS Bluetooth device discovered by Home Assistant.",
+        "data": {
+          "ble_device": "Bluetooth device"
+        }
+      },
+      "bluetooth_manual": {
         "title": "Fogstar BMS Bluetooth connection",
         "description": "Connect to one Fogstar/JBD-compatible BMS over Bluetooth. Use a unique BLE address for each battery where possible.",
         "data": {
@@ -28,10 +35,20 @@
           "password": "BMS password",
           "scan_interval": "Scan interval"
         }
+      },
+      "battery_bank": {
+        "title": "Fogstar BMS battery bank",
+        "description": "Combine multiple configured Fogstar BMS batteries into one aggregate device.",
+        "data": {
+          "name": "Name",
+          "bank_entries": "Batteries",
+          "scan_interval": "Scan interval"
+        }
       }
     },
     "error": {
-      "cannot_connect": "Could not connect to the BMS. Check the connection settings, password, and that no other client is connected."
+      "cannot_connect": "Could not connect to the BMS. Check the connection settings, password, and that no other client is connected.",
+      "not_enough_batteries": "Select at least two batteries."
     },
     "abort": {
       "already_configured": "This BMS is already configured."
@@ -74,6 +91,21 @@
       },
       "software_version": {
         "name": "Software version"
+      },
+      "min_cell_voltage": {
+        "name": "Minimum cell voltage"
+      },
+      "max_cell_voltage": {
+        "name": "Maximum cell voltage"
+      },
+      "cell_voltage_delta": {
+        "name": "Cell voltage delta"
+      },
+      "highest_temperature": {
+        "name": "Highest temperature"
+      },
+      "lowest_temperature": {
+        "name": "Lowest temperature"
       },
       "protection_flags": {
         "name": "Protection flags"

@@ -22,7 +22,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import CONF_CONNECTION_TYPE, CONNECTION_BANK, DOMAIN
 from .coordinator import FogstarBmsCoordinator
 from .jbd import FogstarBmsData
 
@@ -105,6 +105,7 @@ SENSORS: tuple[FogstarSensorDescription, ...] = (
         native_unit_of_measurement="%",
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         value_fn=lambda data: data.state_of_charge,
     ),
     FogstarSensorDescription(
@@ -161,6 +162,56 @@ SENSORS: tuple[FogstarSensorDescription, ...] = (
     ),
 )
 
+BANK_SENSORS: tuple[FogstarSensorDescription, ...] = (
+    FogstarSensorDescription(
+        key="min_cell_voltage",
+        name="Minimum cell voltage",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=3,
+        value_fn=lambda data: min(data.cells) if data.cells else None,
+    ),
+    FogstarSensorDescription(
+        key="max_cell_voltage",
+        name="Maximum cell voltage",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=3,
+        value_fn=lambda data: max(data.cells) if data.cells else None,
+    ),
+    FogstarSensorDescription(
+        key="cell_voltage_delta",
+        name="Cell voltage delta",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=3,
+        value_fn=lambda data: round(max(data.cells) - min(data.cells), 3)
+        if data.cells
+        else None,
+    ),
+    FogstarSensorDescription(
+        key="highest_temperature",
+        name="Highest temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data: max(data.temperatures) if data.temperatures else None,
+    ),
+    FogstarSensorDescription(
+        key="lowest_temperature",
+        name="Lowest temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data: min(data.temperatures) if data.temperatures else None,
+    ),
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -171,6 +222,14 @@ async def async_setup_entry(
     entities: list[SensorEntity] = [
         FogstarBmsSensor(coordinator, entry, description) for description in SENSORS
     ]
+
+    if entry.data.get(CONF_CONNECTION_TYPE) == CONNECTION_BANK:
+        entities.extend(
+            FogstarBmsSensor(coordinator, entry, description)
+            for description in BANK_SENSORS
+        )
+        async_add_entities(entities)
+        return
 
     data = coordinator.data
     entities.extend(

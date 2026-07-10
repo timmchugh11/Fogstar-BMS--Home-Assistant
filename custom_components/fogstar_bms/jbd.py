@@ -23,7 +23,7 @@ class FogstarBmsData:
     hardware: str
     voltage: float
     current: float
-    state_of_charge: int
+    state_of_charge: float
     remaining_capacity: float
     nominal_capacity: float
     cycles: int
@@ -120,6 +120,12 @@ def _temp_c(raw: int) -> float:
     return round(raw / 10.0 - 273.15, 1)
 
 
+def _state_of_charge(remaining_capacity: float, nominal_capacity: float) -> float:
+    if nominal_capacity <= 0:
+        return 0.0
+    return round((remaining_capacity / nominal_capacity) * 100.0, 2)
+
+
 def read_bms(port: str, baudrate: int) -> FogstarBmsData:
     with serial.Serial(port, baudrate, timeout=0.12, write_timeout=0.2) as ser:
         basic = _query(ser, "basic")
@@ -131,6 +137,8 @@ def read_bms(port: str, baudrate: int) -> FogstarBmsData:
 
 def decode_bms_payloads(basic: bytes, cells: bytes, hardware: bytes) -> FogstarBmsData:
     ntc_count = basic[22]
+    remaining_capacity = round(_u16(basic, 4) / 100.0, 2)
+    nominal_capacity = round(_u16(basic, 6) / 100.0, 2)
     temperatures = [
         _temp_c(_u16(basic, 23 + i * 2))
         for i in range(ntc_count)
@@ -141,15 +149,15 @@ def decode_bms_payloads(basic: bytes, cells: bytes, hardware: bytes) -> FogstarB
         hardware=hardware.decode("ascii", errors="replace"),
         voltage=round(_u16(basic, 0) / 100.0, 2),
         current=round(_s16(basic, 2) / 100.0, 2),
-        remaining_capacity=round(_u16(basic, 4) / 100.0, 2),
-        nominal_capacity=round(_u16(basic, 6) / 100.0, 2),
+        remaining_capacity=remaining_capacity,
+        nominal_capacity=nominal_capacity,
         cycles=_u16(basic, 8),
         production_date=_decode_date(_u16(basic, 10)),
         balance_flags_low=_u16(basic, 12),
         balance_flags_high=_u16(basic, 14),
         protection_flags=_u16(basic, 16),
         software_version=basic[18],
-        state_of_charge=basic[19],
+        state_of_charge=_state_of_charge(remaining_capacity, nominal_capacity),
         fet_state=basic[20],
         cells=[round(_u16(cells, i) / 1000.0, 3) for i in range(0, len(cells), 2)],
         temperatures=temperatures,

@@ -18,18 +18,39 @@ their respective owners.
 ## Bluetooth
 
 Bluetooth is recommended when monitoring multiple batteries. Add the integration
-once for each battery and enter that battery's BLE address, BLE name, and BMS
-password.
+once for each battery, choose the battery from the discovered Bluetooth device
+list, and enter the BMS password.
 
 Typical Bluetooth settings:
 
 ```text
 Connection type: Bluetooth
-BLE address: A4:C1:37:...
-BLE name: Battery
+Bluetooth device: Battery (...)
 BMS password: your BMS password
 Scan interval: 30
 ```
+
+If discovery does not show the battery, choose the manual option and enter the
+BLE address and BLE name yourself.
+
+## Battery bank
+
+After adding two or more batteries, add another integration entry and choose
+`Battery bank`. Select the batteries that belong to the same parallel bank.
+
+The bank entry reuses data from the selected battery entries and does not open
+additional Bluetooth or serial connections.
+
+For a parallel bank, the integration reports:
+
+- Average pack voltage
+- Sum of pack current
+- Sum of remaining capacity
+- Sum of nominal capacity
+- Capacity-weighted state of charge
+- Highest and lowest temperature
+- Minimum, maximum, and delta cell voltage
+- Combined protection status
 
 ## Serial
 

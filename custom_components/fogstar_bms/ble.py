@@ -4,8 +4,12 @@ import asyncio
 import logging
 
 from bleak import BleakClient, BleakScanner
+from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from bleak_retry_connector import BleakConnectionError, establish_connection
+
+from homeassistant.components import bluetooth
+from homeassistant.core import HomeAssistant
 
 from .jbd import FogstarBmsData, FogstarBmsError, REQUESTS, decode_bms_payloads
 
@@ -13,6 +17,7 @@ NOTIFY_UUID = "0000ff01-0000-1000-8000-00805f9b34fb"
 WRITE_UUID = "0000ff02-0000-1000-8000-00805f9b34fb"
 ROOT_PASSWORD = bytes.fromhex("4a 42 44 62 74 70 77 64 21 40 23 32 30 32 33")
 LOGGER = logging.getLogger(__name__)
+_BLE_CONNECTION_LOCK = asyncio.Lock()
 
 
 def _checksum_ok(frame: bytes) -> bool:
@@ -39,7 +44,30 @@ def _mac_bytes(address: str, reverse: bool = False) -> bytes:
     return data[::-1] if reverse else data
 
 
-async def _find_device(address: str | None, name: str | None):
+async def _find_device(
+    hass: HomeAssistant | None,
+    address: str | None,
+    name: str | None,
+) -> BLEDevice | None:
+    if hass is not None:
+        if address:
+            device = bluetooth.async_ble_device_from_address(
+                hass,
+                address,
+                connectable=True,
+            )
+            if device is not None:
+                return device
+
+        if name:
+            lowered_name = name.lower()
+            for service_info in bluetooth.async_discovered_service_info(
+                hass,
+                connectable=True,
+            ):
+                if service_info.name and lowered_name in service_info.name.lower():
+                    return service_info.device
+
     if address:
         return await BleakScanner.find_device_by_address(address, timeout=15)
     return await BleakScanner.find_device_by_filter(
@@ -208,47 +236,49 @@ async def read_bms_ble(
     name: str | None,
     password: str,
     pair: bool,
+    hass: HomeAssistant | None = None,
 ) -> FogstarBmsData:
-    device = await _find_device(address, name)
-    if device is None:
-        raise FogstarBmsError("BLE device not found")
+    async with _BLE_CONNECTION_LOCK:
+        device = await _find_device(hass, address, name)
+        if device is None:
+            raise FogstarBmsError("BLE device not found")
 
-    try:
-        client = await establish_connection(
-            BleakClient,
-            device,
-            device.name or device.address,
-            timeout=20,
-            pair=pair,
-        )
-    except (BleakConnectionError, BleakError) as err:
-        raise FogstarBmsError(str(err)) from err
-    try:
-        if password:
-            authenticated = False
-            for reverse_mac in (False, True):
-                try:
-                    await _authenticate(client, device.address, password, reverse_mac)
-                    authenticated = True
-                    break
-                except Exception:
-                    LOGGER.debug(
-                        "BLE BMS authentication attempt failed reverse_mac=%s",
-                        reverse_mac,
-                        exc_info=True,
-                    )
-                    if not client.is_connected:
-                        raise
-            if not authenticated:
-                raise FogstarBmsError("BLE authentication failed")
-            await asyncio.sleep(0.2)
+        try:
+            client = await establish_connection(
+                BleakClient,
+                device,
+                device.name or device.address,
+                timeout=20,
+                pair=pair,
+            )
+        except (BleakConnectionError, BleakError) as err:
+            raise FogstarBmsError(str(err)) from err
+        try:
+            if password:
+                authenticated = False
+                for reverse_mac in (False, True):
+                    try:
+                        await _authenticate(client, device.address, password, reverse_mac)
+                        authenticated = True
+                        break
+                    except Exception:
+                        LOGGER.debug(
+                            "BLE BMS authentication attempt failed reverse_mac=%s",
+                            reverse_mac,
+                            exc_info=True,
+                        )
+                        if not client.is_connected:
+                            raise
+                if not authenticated:
+                    raise FogstarBmsError("BLE authentication failed")
+                await asyncio.sleep(0.2)
 
-        basic = await _query_with_retries(client, REQUESTS["basic"])
-        cells = await _query_with_retries(client, REQUESTS["cells"])
-        hardware = await _query_with_retries(client, REQUESTS["hardware"])
-    except BleakError as err:
-        raise FogstarBmsError(str(err)) from err
-    finally:
-        if client.is_connected:
-            await client.disconnect()
-    return decode_bms_payloads(basic, cells, hardware)
+            basic = await _query_with_retries(client, REQUESTS["basic"])
+            cells = await _query_with_retries(client, REQUESTS["cells"])
+            hardware = await _query_with_retries(client, REQUESTS["hardware"])
+        except BleakError as err:
+            raise FogstarBmsError(str(err)) from err
+        finally:
+            if client.is_connected:
+                await client.disconnect()
+        return decode_bms_payloads(basic, cells, hardware)
