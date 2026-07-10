@@ -3,6 +3,10 @@
 Custom Home Assistant integration for a Fogstar Drift Pro Gen2 / JBD-compatible
 BMS connected over Bluetooth or RS485.
 
+This project is an independent community integration and is not affiliated with,
+endorsed by, or sponsored by Fogstar. Product names and trademarks belong to
+their respective owners.
+
 ## Installation
 
 1. Add this repository to HACS as a custom repository.
