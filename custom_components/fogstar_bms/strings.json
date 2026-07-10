@@ -1,0 +1,86 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fogstar BMS",
+        "description": "Choose how Home Assistant should connect to the BMS.",
+        "data": {
+          "connection_type": "Connection type"
+        }
+      },
+      "serial": {
+        "title": "Fogstar BMS serial connection",
+        "description": "Connect to one Fogstar/JBD-compatible BMS over RS485.",
+        "data": {
+          "name": "Name",
+          "port": "Serial port",
+          "baudrate": "Baud rate",
+          "scan_interval": "Scan interval"
+        }
+      },
+      "bluetooth": {
+        "title": "Fogstar BMS Bluetooth connection",
+        "description": "Connect to one Fogstar/JBD-compatible BMS over Bluetooth. Use a unique BLE address for each battery where possible.",
+        "data": {
+          "name": "Name",
+          "ble_address": "BLE address",
+          "ble_name": "BLE name",
+          "password": "BMS password",
+          "scan_interval": "Scan interval"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect to the BMS. Check the connection settings, password, and that no other client is connected."
+    },
+    "abort": {
+      "already_configured": "This BMS is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Fogstar BMS options",
+        "data": {
+          "port": "Serial port",
+          "baudrate": "Baud rate",
+          "ble_address": "BLE address",
+          "ble_name": "BLE name",
+          "password": "BMS password",
+          "scan_interval": "Scan interval"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "voltage": {
+        "name": "Voltage"
+      },
+      "current": {
+        "name": "Current"
+      },
+      "state_of_charge": {
+        "name": "State of charge"
+      },
+      "remaining_capacity": {
+        "name": "Remaining capacity"
+      },
+      "nominal_capacity": {
+        "name": "Nominal capacity"
+      },
+      "cycles": {
+        "name": "Cycles"
+      },
+      "software_version": {
+        "name": "Software version"
+      },
+      "protection_flags": {
+        "name": "Protection flags"
+      },
+      "fet_state": {
+        "name": "FET state"
+      }
+    }
+  }
+}

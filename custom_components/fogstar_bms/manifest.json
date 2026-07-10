@@ -1,0 +1,13 @@
+{
+  "domain": "fogstar_bms",
+  "name": "Fogstar BMS",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/timmchugh11/Fogstar-BMS--Home-Assistant",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/timmchugh11/Fogstar-BMS--Home-Assistant/issues",
+  "requirements": ["bleak>=0.22.0", "bleak-retry-connector>=3.9.0", "pyserial==3.5"],
+  "version": "0.1.0"
+}
