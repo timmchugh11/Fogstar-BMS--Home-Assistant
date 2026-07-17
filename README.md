@@ -47,7 +47,7 @@ For a parallel bank, the integration reports:
 - Sum of pack current
 - Sum of remaining capacity
 - Sum of nominal capacity
-- Capacity-weighted state of charge
+- Lowest per-pack capacity-based state of charge
 - Highest and lowest temperature
 - Minimum, maximum, and delta cell voltage
 - Combined protection status

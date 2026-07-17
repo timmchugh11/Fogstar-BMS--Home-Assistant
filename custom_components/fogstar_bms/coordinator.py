@@ -77,13 +77,15 @@ class FogstarBmsCoordinator(DataUpdateCoordinator[FogstarBmsData]):
 
         nominal_capacity = sum(battery.nominal_capacity for battery in batteries)
         remaining_capacity = sum(battery.remaining_capacity for battery in batteries)
-        if nominal_capacity:
-            state_of_charge = round((remaining_capacity / nominal_capacity) * 100.0, 2)
-        else:
-            state_of_charge = round(
-                sum(battery.state_of_charge for battery in batteries) / len(batteries),
-                2,
-            )
+        state_of_charge = round(
+            min(
+                (battery.remaining_capacity / battery.nominal_capacity) * 100.0
+                if battery.nominal_capacity
+                else battery.state_of_charge
+                for battery in batteries
+            ),
+            2,
+        )
 
         cells = [cell for battery in batteries for cell in battery.cells]
         temperatures = [
